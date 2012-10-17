@@ -1,0 +1,9 @@
+dist
+cabal-dev
+*.o
+*.bin
+*.hi
+*.chi
+*.chs.h
+.DS_Store
+build
