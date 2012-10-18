@@ -1,1 +1,3 @@
-module Language.Imperia.Parser where
+module Language.Imperia.Parser (parse) where
+
+parse :: String -> AbstractSyntaxTree
