@@ -3,7 +3,7 @@ module Language.Imperia.Grammar.Expression
   , BooleanOperator (..)
   , RelationalOperator (..)
   , ArithmeticExpression (..)
-  , ArithmeticOperator
+  , ArithmeticOperator (..)
   , Expression
   )
 where
@@ -36,7 +36,7 @@ data ArithmeticExpression =
     ArithmeticOperation ArithmeticOperator ArithmeticExpression ArithmeticExpression
   | ArithmeticNegation ArithmeticExpression
   | Variable String
-  | Value Int
+  | Value Integer
   deriving (Show)
 
 data ArithmeticOperator =

@@ -1,4 +1,8 @@
-module Language.Imperia.Grammar.Statement where
+module Language.Imperia.Grammar.Statement
+  ( Program
+  , Statement (..)
+  )
+where
 
 import Language.Imperia.Grammar.Expression
 
@@ -6,8 +10,8 @@ type Program = [Statement]
 
 data Statement =
   Assignment String ArithmeticExpression |
-  IfThenElse BooleanExpression [Statement] [Statement] |
-  WhileLoop BooleanExpression [Statement] |
+  IfThenElse BooleanExpression Statement Statement |
+  WhileLoop BooleanExpression Statement |
   Sequencing [Statement]
   deriving (Show)
 
