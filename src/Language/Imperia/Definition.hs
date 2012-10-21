@@ -1,31 +1,30 @@
+{-# LANGUAGE NoMonomorphismRestriction #-}
+
 module Language.Imperia.Definition (definition) where
 
-import Text.ParserCombinators.Parsec
-import Text.ParserCombinators.Parsec.Language
-import qualified Text.ParserCombinators.Parsec.Token as Token
+import Text.Parsec
+import Text.Parsec.Token (GenLanguageDef(..))
 
-definition = emptyDef 
-  { Token.commentStart    = "/*"
-  , Token.commentEnd      = "*/"
-  , Token.commentLine     = "//"
-  , Token.identStart      = letter
-  , Token.identLetter     = alphaNum
-  , Token.reservedNames   =
-    [ "if"
-    , "then"
-    , "else"
-    , "while"
-    , "do"
-    , "true"
-    , "false"
-    , "not"
-    , "and"
-    , "or"
+definition = LanguageDef
+  { commentStart    = "###"
+  , commentEnd      = "###"
+  , commentLine     = "#"
+  , identStart      = letter
+  , identLetter     = alphaNum
+  , opStart         = oneOf "-+/*^=<>"
+  , opLetter        = oneOf "-+/*^=<>"
+  , caseSensitive   = True
+  , nestedComments  = True
+  , reservedNames   =
+    [ "if" , "unless", "else"
+    , "while", "until"
+    , "true", "false"
+    , "not", "and", "or"
     ]
-  , Token.reservedOpNames =
+  , reservedOpNames =
     [ "+", "-", "*", "^", "/", "="
     , "<", "<=", ">", ">=", "==", "!="
     , "and", "or", "not"
+    , "&&", "||", "!"
     ]
   }
-

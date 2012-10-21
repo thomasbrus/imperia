@@ -10,8 +10,9 @@ type Program = [Statement]
 
 data Statement =
   Assignment String ArithmeticExpression |
-  IfThenElse BooleanExpression Statement Statement |
-  WhileLoop BooleanExpression Statement |
+  IfElseStatement BooleanExpression Statement Statement |
+  IfStatement BooleanExpression Statement |
+  WhileStatement BooleanExpression Statement |
   Sequencing [Statement]
   deriving (Show)
 

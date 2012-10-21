@@ -36,7 +36,7 @@ data ArithmeticExpression =
     ArithmeticOperation ArithmeticOperator ArithmeticExpression ArithmeticExpression
   | ArithmeticNegation ArithmeticExpression
   | Variable String
-  | Value Integer
+  | Constant Integer
   deriving (Show)
 
 data ArithmeticOperator =

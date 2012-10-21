@@ -5,20 +5,21 @@ module Language.Imperia.Lexer
   , operator
   , parens
   , integer
-  , semicolon
   , whitespace
   )
 where
 
-import qualified Text.ParserCombinators.Parsec.Token as Token
-import Language.Imperia.Definition
+import Control.Monad.Identity
+import Text.Parsec.Token (makeTokenParser)
+import qualified Text.Parsec.IndentParsec.Token as IndentToken
+import Language.Imperia.Definition (definition)
 
-lexer = Token.makeTokenParser definition
+lexer :: IndentToken.IndentTokenParser String () Identity
+lexer = makeTokenParser definition
 
-identifier  = Token.identifier lexer
-reserved    = Token.reserved lexer
-operator    = Token.reservedOp lexer
-parens      = Token.parens lexer
-integer     = Token.integer lexer
-semicolon   = Token.semi lexer
-whitespace  = Token.whiteSpace lexer
+identifier  = IndentToken.identifier lexer
+reserved    = IndentToken.reserved lexer
+operator    = IndentToken.reservedOp lexer
+parens      = IndentToken.parens lexer
+integer     = IndentToken.integer lexer
+whitespace  = IndentToken.whiteSpace lexer
