@@ -26,9 +26,6 @@ parse input = case runIdentity $ runGIPT parser () "" input of
 parser :: Parser Statement
 parser = statement
 
-empty :: Parser Statement
-empty = do return $ Sequencing []
-
 statement :: Parser Statement
 statement = do
   ls <- many statement'
