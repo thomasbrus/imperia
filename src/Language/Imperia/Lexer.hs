@@ -6,6 +6,7 @@ module Language.Imperia.Lexer
   , parens
   , integer
   , whitespace
+  , pipe
   )
 where
 
@@ -23,3 +24,4 @@ operator    = IndentToken.reservedOp lexer
 parens      = IndentToken.parens lexer
 integer     = IndentToken.integer lexer
 whitespace  = IndentToken.whiteSpace lexer
+pipe        = IndentToken.symbol lexer "|"

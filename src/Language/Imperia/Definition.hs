@@ -16,13 +16,16 @@ definition = LanguageDef
   , caseSensitive   = True
   , nestedComments  = True
   , reservedNames   =
-    [ "if" , "unless", "else"
+    [ "if" , "unless"
+    , "then", "else"
     , "while", "until"
+    , "do"
     , "true", "false"
     , "not", "and", "or"
+    , "nil"
     ]
   , reservedOpNames =
-    [ "+", "-", "*", "^", "/", "="
+    [ "+", "-", "*", "^", "/", "->", "<-"
     , "<", "<=", ">", ">=", "==", "!="
     , "and", "or", "not"
     , "&&", "||", "!"

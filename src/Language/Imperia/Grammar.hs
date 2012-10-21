@@ -1,14 +1,26 @@
-module Language.Imperia.Grammar.Expression
-  ( BooleanExpression (..)
+module Language.Imperia.Grammar
+  ( Expression (..)
+  , BooleanExpression (..)
   , BooleanOperator (..)
   , RelationalOperator (..)
   , ArithmeticExpression (..)
   , ArithmeticOperator (..)
-  , Expression
   )
 where
 
 import Prelude hiding (True, False)
+
+data Expression =
+    Nil
+  | Expression (Either ArithmeticExpression BooleanExpression)
+  | Assignment String Expression
+  | Block [String] Expression
+  | Call String [Expression]
+  | IfElseExpression BooleanExpression Expression Expression
+  | IfExpression BooleanExpression Expression
+  | WhileExpression BooleanExpression Expression
+  | Sequencing [Expression]
+  deriving (Show)
 
 data BooleanExpression =
     BooleanOperation BooleanOperator BooleanExpression BooleanExpression
@@ -46,8 +58,6 @@ data ArithmeticOperator =
   | Division
   | Exponentiation
   deriving (Show)
-
-type Expression = Either ArithmeticExpression BooleanExpression
 
 
 
