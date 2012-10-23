@@ -11,6 +11,8 @@ data Store = Memory
   , registerOffset :: Int
   , references :: [(String, Address)]
   }
+  deriving (Show)
 
-emptyStore = Memory { memory = [], registerOffset = 3, references = [] }
--- testStore = emptyStore { references = [("test", 1)] }
+emptyStore :: Store
+emptyStore = Memory { memory = [], registerOffset = 1, references = [] }
+

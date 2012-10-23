@@ -13,13 +13,13 @@ perform compile store opCode expr1 expr2 =
     ( -- Leave the store as is
       store,
       -- Load the outcome of the first expression into register
-      (snd $ compile store' expr1) ++ [ Load (Addr 1) offset ] ++ 
+      (snd $ compile store' expr1) ++ [ Load (Addr $ offset + 2) offset ] ++ 
       -- Likewise for the second expression
-      (snd $ compile store' expr2) ++ [ Load (Addr 1) (offset + 1) ] ++
+      (snd $ compile store' expr2) ++ [ Load (Addr $ offset + 2) (offset + 1) ] ++
       -- Perform calculation and store the result into the register
       [ Calc opCode offset (offset + 1) 1
       -- Store the result from the register to memory
-      , Store (Addr 1) 1
+      , Store (Addr 1) offset
       ]
     )
 

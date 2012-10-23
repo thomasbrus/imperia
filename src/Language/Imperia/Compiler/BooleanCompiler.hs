@@ -5,24 +5,21 @@ import Processor.Sprockell (Assembly (..), Value (..), OpCode (..))
 import Language.Imperia.Grammar hiding (BooleanOperator (..))
 import qualified Language.Imperia.Grammar as Grammar (BooleanOperator (..), BooleanExpression(..))
 import Language.Imperia.Compiler.Store
-import qualified Language.Imperia.Compiler.Type as Type
 import qualified Language.Imperia.Compiler.Operation as Operation
 
 import qualified Language.Imperia.Compiler.ArithmeticCompiler as ArithmeticCompiler
 
 compile :: Store -> BooleanExpression -> (Store, [Assembly])
-compile store booleanExpression =
-  let (store', assembly) = compile' store booleanExpression
-  in (store', assembly ++ (Type.set Type.Bool))
+compile store booleanExpression = compile' store booleanExpression
 
 compile' :: Store -> BooleanExpression -> (Store, [Assembly])
 compile' store booleanExpression =
   case booleanExpression of
     Grammar.True ->
-      (store, [ Store (Imm 1) 1 ])
+      (store, [ Store (Imm 1) (registerOffset store) ])
 
     Grammar.False ->
-      (store, [ Store (Imm 0) 1 ])
+      (store, [ Store (Imm 0) (registerOffset store) ])
 
     BooleanOperation Grammar.And expr1 expr2 ->
       perform store And expr1 expr2

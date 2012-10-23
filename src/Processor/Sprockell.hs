@@ -32,8 +32,8 @@ data Assembly =   Load  Value Int               -- Load (Addr a) r : from "memor
     | Calc OpCode Int Int Int     -- Calc opc r0 r1 r2: "regbank r0" and "regbank r1" go to "alu",
             --      do "opc", result to "regbank r2"
     | Jump  Int     -- JumpAbs n: set program counter to n
-    | CJump  Int      -- JumpRel n: set program counter to n if bool b is 1
-
+    | CJump  Int      -- JumpCond n: set program counter to n if bool b is 1
+    | RJump Int
     | EndProg     -- end of program, handled bij exec function
 
     deriving (Eq,Show)
@@ -73,13 +73,14 @@ data MachCode = MachCode { loadInstr  :: Int    -- 0/1: load from dmem to rbank?
                    , value  :: Int    -- value from Immediate
        , jmp    :: Int    -- 0/1: indicates a jump
        , cjmp   :: Int    -- 0/1: indicates a conditional jump
+       , rjmp   :: Int    -- 0/1: indicates a relative, conditonal jump
        , instrnr  :: Int    -- which instruction to jump to
                    }
     deriving (Eq,Show)
 
 nullcode = MachCode { loadInstr=0, imm=0, opc=NoOp, fromaddr=0, toaddr=0,
           fromreg0=0, fromreg1=0, toreg=0, value=0,
-          jmp=0, cjmp=0, instrnr=0}
+          jmp=0, cjmp=0, rjmp=0, instrnr=0}
 
 
 
@@ -130,7 +131,7 @@ decode instr  = case instr of
 
     Jump n      ->  nullcode {jmp=1, instrnr=n}
     CJump n     ->  nullcode {cjmp=1, instrnr=n}
-
+    RJump n     -> nullcode {rjmp=1, instrnr=n}
 
 
 load (regbank,dmem) (loadInstr,fromaddr,toreg,imm,value,y)
@@ -150,10 +151,11 @@ alu opc x0 x1 = (cnd,y)
     cnd = y `mod` 2
 
 
-next (pc,jmp,cjmp,instrnr,cnd)
-      | jmp ==1   = instrnr
-      | cjmp==1 && cnd==1 = instrnr
-      | otherwise   = pc+1
+next (pc,jmp,cjmp,rjmp,instrnr,cnd)
+  | jmp == 1              = instrnr
+  | cjmp == 1 && cnd == 1 = instrnr
+  | rjmp == 1 && cnd == 1 = pc + instrnr
+  | otherwise             = pc + 1
 
 
 
@@ -171,7 +173,7 @@ sprockell  prog  state  tick   =   State {dmem=dmem',regbank=regbank',pc=pc',cnd
 
     regbank' =  load (regbank,dmem) (loadInstr,fromaddr,toreg,imm,value,y)
 
-    pc'      = next (pc,jmp,cjmp,instrnr,cnd)
+    pc'      = next (pc,jmp,cjmp,rjmp,instrnr,cnd)
 
 
 

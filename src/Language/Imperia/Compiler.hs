@@ -30,6 +30,32 @@ compile' store (Expression (Left arithmeticExpression)) =
 compile' store (Expression (Right booleanExpression)) =
   BooleanCompiler.compile store booleanExpression
 
+compile' store (IfExpression booleanExpression expression) =
+  compile' store (IfElseExpression booleanExpression expression (Sequencing []))
+
+compile' store (IfElseExpression booleanExpression expr1 expr2) =
+  ( store
+  , condition ++
+    [ Load (Addr $ offset + 2) offset
+    , Calc Eq offset 0 0
+    , RJump $ 2 + length consequent
+    ] ++
+    consequent ++
+    [ RJump $ 1 + length alternative
+    ] ++
+    alternative
+    --[ Load (Addr $ offset + 2) offset
+    --, Store (Addr offset) offset
+    --]
+  )
+  where
+    offset = registerOffset store
+    store' = store { registerOffset = offset + 2 }
+    condition = snd $ compile' store' $ Expression $ Right booleanExpression
+    consequent = snd $ compile' store' expr1
+    alternative = snd $ compile' store' expr2
+
+
 --compile' store (Assignment label expression) =
 --  (compile' store expression) ++ 
 --  ( store',

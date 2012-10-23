@@ -4,19 +4,18 @@ import Processor.Sprockell (Assembly (..), Value (..), OpCode (..))
 
 import Language.Imperia.Grammar
 import Language.Imperia.Compiler.Store
-import qualified Language.Imperia.Compiler.Type as Type
 import qualified Language.Imperia.Compiler.Operation as Operation
 
 compile :: Store -> ArithmeticExpression -> (Store, [Assembly])
-compile store arithmeticExpression =
-  let (store', assembly) = compile' store arithmeticExpression
-  in (store', assembly ++ (Type.set Type.Int))
+compile store arithmeticExpression = compile' store arithmeticExpression
 
 compile' :: Store -> ArithmeticExpression -> (Store, [Assembly])
 compile' store arithmeticExpression =
   case arithmeticExpression of
     Constant int ->
-      (store, [ Store (Imm (fromIntegral int)) 1 ])
+      ( store,
+        [ Store (Imm (fromIntegral int)) (registerOffset store) ]
+      )
 
     ArithmeticNegation expression ->
       compile' store $ ArithmeticOperation Subtraction (Constant 0) expression

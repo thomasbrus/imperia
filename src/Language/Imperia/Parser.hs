@@ -49,7 +49,7 @@ ifElseExpression :: Parser Expression
 ifElseExpression = do
   (IfExpression condition consequent) <- ifExpression
   reserved "else"
-  alternative <- blockOf expressions
+  alternative <- (try expression) <|> blockOf expressions
   return $ IfElseExpression condition consequent alternative
 
 ifExpression :: Parser Expression
@@ -57,14 +57,14 @@ ifExpression = do
   reserved "if"
   condition <- booleanExpression
   optional $ reserved "then"
-  consequent <- blockOf expressions
+  consequent <- (try expression) <|> blockOf expressions
   return $ IfExpression condition consequent
 
 unlessElseExpression :: Parser Expression
 unlessElseExpression = do
   (IfExpression condition consequent) <- unlessExpression
   reserved "else"
-  alternative <- blockOf expressions
+  alternative <- (try expression) <|> blockOf expressions
   return $ IfElseExpression condition consequent alternative
 
 unlessExpression :: Parser Expression
@@ -72,7 +72,7 @@ unlessExpression = do
   reserved "unless"
   condition <- booleanExpression
   optional $ reserved "then"
-  consequent <- blockOf expressions
+  consequent <- (try expression) <|> blockOf expressions
   return $ IfExpression (LogicalNegation condition) consequent  
 
 whileExpression :: Parser Expression
@@ -80,7 +80,7 @@ whileExpression = do
   reserved "while"
   condition <- booleanExpression
   optional $ reserved "do"
-  consequent <- blockOf expressions
+  consequent <- (try expression) <|> blockOf expressions
   return $ WhileExpression condition consequent
 
 untilExpression :: Parser Expression
@@ -88,13 +88,13 @@ untilExpression = do
   reserved "until"
   condition <- booleanExpression
   optional $ reserved "do"
-  consequent <- blockOf expressions
+  consequent <- (try expression) <|> blockOf expressions
   return $ WhileExpression (LogicalNegation condition) consequent
 
 blockExpression :: Parser Expression
 blockExpression = do
   args <- between pipe pipe (sepBy1 identifier whitespace)
-  body <- expression <|> blockOf expressions
+  body <- (try expression) <|> blockOf expressions
   return $ Block args body
 
 callExpression :: Parser Expression
@@ -108,7 +108,7 @@ assignExpression :: Parser Expression
 assignExpression = do
   variable <- identifier
   operator "->"
-  assignable <- blockOf expressions
+  assignable <- (try expression) <|> blockOf expressions
   return $ Assignment variable assignable
 
 nilExpression :: Parser Expression
