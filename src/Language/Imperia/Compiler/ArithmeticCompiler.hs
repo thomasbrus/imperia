@@ -1,18 +1,25 @@
-module Language.Imperia.Compiler.Arithmetic (compile) where
+module Language.Imperia.Compiler.ArithmeticCompiler (compile) where
 
 import Processor.Sprockell (Assembly (..), Value (..), OpCode (..))
 
 import Language.Imperia.Grammar
 import Language.Imperia.Compiler.Store
+import qualified Language.Imperia.Compiler.Type as Type
+import qualified Language.Imperia.Compiler.Operation as Operation
 
 compile :: Store -> ArithmeticExpression -> (Store, [Assembly])
 compile store arithmeticExpression =
+  let (store', assembly) = compile' store arithmeticExpression
+  in (store', assembly ++ (Type.set Type.Int))
+
+compile' :: Store -> ArithmeticExpression -> (Store, [Assembly])
+compile' store arithmeticExpression =
   case arithmeticExpression of
     Constant int ->
       (store, [ Store (Imm (fromIntegral int)) 1 ])
 
     ArithmeticNegation expression ->
-      compile store $ ArithmeticOperation Subtraction (Constant 0) expression
+      compile' store $ ArithmeticOperation Subtraction (Constant 0) expression
 
     ArithmeticOperation Addition expr1 expr2 ->
       perform store Add expr1 expr2
@@ -30,21 +37,6 @@ compile store arithmeticExpression =
       error "Exponentiation is not yet implemented"
 
 perform :: Store -> OpCode -> ArithmeticExpression -> ArithmeticExpression -> (Store, [Assembly])
-perform store opCode expr1 expr2 =
-  let
-    offset = registerOffset store
-    store' = store { registerOffset = offset + 2 }
-  in
-    ( store,
-      -- Load the outcome of the first expression into register
-      (snd $ compile store' expr1) ++ [ Load (Addr 1) offset ] ++ 
-      -- Likewise for the second expression
-      (snd $ compile store' expr2) ++ [ Load (Addr 1) (offset + 1) ] ++
-      -- Perform calculation and store the result into the register
-      [ Calc opCode offset (offset + 1) 1
-      -- Store the result from the register to memory
-      , Store (Addr 1) 1
-      ]
-    )
+perform store opCode expr1 expr2 = Operation.perform compile' store opCode expr1 expr2
 
 

@@ -7,7 +7,8 @@ import Language.Imperia.Parser
 
 import Language.Imperia.Grammar
 import Language.Imperia.Compiler.Store
-import qualified Language.Imperia.Compiler.Arithmetic as Arithmetic
+import qualified Language.Imperia.Compiler.ArithmeticCompiler as ArithmeticCompiler
+import qualified Language.Imperia.Compiler.BooleanCompiler as BooleanCompiler
 
 import Data.List
 
@@ -24,7 +25,10 @@ compile' store (Sequencing expressions) =
   expressions
 
 compile' store (Expression (Left arithmeticExpression)) =
-  Arithmetic.compile store arithmeticExpression
+  ArithmeticCompiler.compile store arithmeticExpression
+
+compile' store (Expression (Right booleanExpression)) =
+  BooleanCompiler.compile store booleanExpression
 
 --compile' store (Assignment label expression) =
 --  (compile' store expression) ++ 

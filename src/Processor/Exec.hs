@@ -36,7 +36,7 @@ main = putStr . unlines . map show $ test testprog
 
 testprog = prog1
 
-output prog (state@State{..}) = (dmem, regbank, dmem !! 1) -- , regbank!!2, regbank!!3)
+output prog (state@State{..}) = (dmem, regbank, dmem !! 1, dmem !! 2) -- , regbank!!2, regbank!!3)
             -- Note: field names from the state
             --   are usable as variables
 

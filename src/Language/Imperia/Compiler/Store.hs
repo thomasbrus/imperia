@@ -12,5 +12,5 @@ data Store = Memory
   , references :: [(String, Address)]
   }
 
-emptyStore = Memory { memory = [], registerOffset = 2, references = [] }
+emptyStore = Memory { memory = [], registerOffset = 3, references = [] }
 -- testStore = emptyStore { references = [("test", 1)] }

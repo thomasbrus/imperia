@@ -161,11 +161,11 @@ relationalExpression = do
 
 relation :: Parser RelationalOperator
 relation =
-      (reserved "<"   >> return LessThan)
-  <|> (reserved "<="  >> return LessThanOrEqual)
-  <|> (reserved ">"   >> return GreaterThan)
+      (reserved "<="  >> return LessThanOrEqual)
+  <|> (reserved "<"   >> return LessThan)
   <|> (reserved ">="  >> return GreaterThanOrEqual)
-  <|> (reserved "=="  >> return Equal)
+  <|> (reserved ">"   >> return GreaterThan)
   <|> (reserved "!="  >> return NotEqual)
+  <|> (reserved "=="  >> return Equal)
 
 
