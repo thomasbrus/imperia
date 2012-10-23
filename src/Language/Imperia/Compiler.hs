@@ -35,10 +35,8 @@ compile' store (Expression (Left arithmeticExpression)) =
     --  in
     --    [ Store (Imm value) 1
     --    ]
-    --ArithmeticNegation arithmeticExpression' ->
-    --  [ Calc Sub 
-
-    --  ]
+    ArithmeticNegation expr ->
+      compile' store $ Expression $ Left $ ArithmeticOperation Subtraction (Constant 0) expr
 
     ArithmeticOperation Addition expr1 expr2 ->
       evaluateArithmeticOperation store Add expr1 expr2
