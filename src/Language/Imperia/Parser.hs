@@ -26,7 +26,7 @@ parser =  expressions
 
 expressions :: Parser Expression
 expressions = do
-  ls <- many $ foldedLinesOf ((parens expression) <|> expression)
+  ls <- many $ foldedLinesOf expression -- parens expression) <|> 
   return $ if length ls == 1 then head ls else Sequencing ls
 
 expression :: Parser Expression
@@ -103,7 +103,6 @@ callExpression = do
   operator "<-"
   args <- sepBy1 ((parens expression) <|> expression) whitespace
   return $ Call callee args
-
 
 assignExpression :: Parser Expression
 assignExpression = do
