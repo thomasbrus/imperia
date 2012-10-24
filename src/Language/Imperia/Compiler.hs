@@ -35,18 +35,36 @@ compile' store (IfExpression booleanExpression expression) =
 
 compile' store (IfElseExpression booleanExpression expr1 expr2) =
   ( store
-  , condition ++
-    [ Load (Addr $ offset + 2) offset
+  , -- Evaluate the condition
+    condition ++
+
+    [ -- Now load it into the register
+      Load (Addr $ offset + 2) offset
+      -- And set the condition flag
     , Calc Eq offset 0 0
-    , RJump $ 2 + length consequent
+      -- Jump to alternative if false
+    , RCJump $ length consequent + 2
     ] ++
+
+    -- Otherwise evaluate the consequent
     consequent ++
-    [ RJump $ 1 + length alternative
+    
+    [ -- Jump to the very end and store the outcome
+      RJump $ length alternative + 2
     ] ++
-    alternative
-    --[ Load (Addr $ offset + 2) offset
-    --, Store (Addr offset) offset
-    --]
+
+    -- Evaluate the alternative and store the outcome
+    -- If the alternative is empty, then skip it alltogether
+    (if null alternative then [] else alternative ++ [ RJump 2 ]) ++
+
+    [ -- Skip storing the outcome
+      RJump 3
+    ] ++
+
+    [ -- Store the outcome of the evaluated sub routine
+      Load (Addr $ offset + 2) offset
+    , Store (Addr offset) offset
+    ]
   )
   where
     offset = registerOffset store
@@ -56,30 +74,8 @@ compile' store (IfElseExpression booleanExpression expr1 expr2) =
     alternative = snd $ compile' store' expr2
 
 
---compile' store (Assignment label expression) =
---  (compile' store expression) ++ 
---  ( store',
---    [ Store (Imm )
-
---    ]
---  )
---  where
---    references' = (references store) ++ [(label, )]
---    store' = store { references = references' }
-
---storeInMemory :: Store -> Int -> Address
---storeInMemory store int
---  | Just result
---  = 
-
 fetchFromMemory :: Store -> Address -> Int
 fetchFromMemory store address = (memory store) !! address
-
---locateOrStoreInMemory :: Store -> Int -> (Address, [Assembly])
---locateOrStoreInMemory store int
---  case locateInMemory store int of
---    Just address -> (address, [])
---    Nothing -> (..., [Store ...])
 
 locateInMemory :: Store -> Int -> Maybe Address
 locateInMemory store int = findIndex ((==) int) (memory store)
