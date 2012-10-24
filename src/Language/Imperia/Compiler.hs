@@ -54,12 +54,8 @@ compile' store (IfElseExpression booleanExpression expr1 expr2) =
     ] ++
 
     -- Evaluate the alternative and store the outcome
-    -- If the alternative is empty, then skip it alltogether
-    (if null alternative then [] else alternative ++ [ RJump 2 ]) ++
-
-    [ -- Skip storing the outcome
-      RJump 3
-    ] ++
+    -- If the alternative is empty, then skip storing its outcome
+    (if null alternative then [ RJump 3 ] else alternative) ++
 
     [ -- Store the outcome of the evaluated sub routine
       Load (Addr $ offset + 2) offset
@@ -72,7 +68,6 @@ compile' store (IfElseExpression booleanExpression expr1 expr2) =
     condition = snd $ compile' store' $ Expression $ Right booleanExpression
     consequent = snd $ compile' store' expr1
     alternative = snd $ compile' store' expr2
-
 
 fetchFromMemory :: Store -> Address -> Int
 fetchFromMemory store address = (memory store) !! address
