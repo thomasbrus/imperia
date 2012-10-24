@@ -33,9 +33,7 @@ expressions = do
 
 expression :: Parser Expression
 expression = choice
-  [ try blockExpression
-  , try callExpression
-  , try assignExpression
+  [ try assignExpression
   , ifElseExpression
   , unlessElseExpression
   , whileExpression
@@ -88,7 +86,7 @@ whileExpression = do
   consequent <- expression <|> blockOf expression
   return $ WhileExpression condition consequent
 
--- TODO: For expression
+-- TODO: For loops
 
 untilExpression :: Parser Expression
 untilExpression = do
@@ -98,24 +96,24 @@ untilExpression = do
   consequent <- expression <|> blockOf expression
   return $ WhileExpression (LogicalNegation condition) consequent  
 
-blockExpression :: Parser Expression
-blockExpression = do
-  args <- between pipe pipe (sepBy1 identifier whitespace)
-  body <- (try $ blockOf expressions) <|> expression
-  return $ Block args body
+--blockExpression :: Parser Expression
+--blockExpression = do
+--  args <- between pipe pipe (sepBy1 identifier whitespace)
+--  body <- (try $ blockOf expressions) <|> expression
+--  return $ Block args body
 
-callExpression :: Parser Expression
-callExpression = do
-  callee <- identifier
-  operator "<-"
-  args <- sepBy1 ((parens expression) <|> expression) whitespace
-  return $ Call callee args
+--callExpression :: Parser Expression
+--callExpression = do
+--  callee <- identifier
+--  operator "->"
+--  args <- sepBy1 ((parens expression) <|> expression) whitespace
+--  return $ Call callee args
 
 assignExpression :: Parser Expression
 assignExpression = do
   variable <- identifier
-  operator "->"
-  assignable <- (try $ blockOf expressions) <|> expression
+  operator "="
+  assignable <- expression <|> blockOf expressions
   return $ Assignment variable assignable
 
 nilExpression :: Parser Expression
