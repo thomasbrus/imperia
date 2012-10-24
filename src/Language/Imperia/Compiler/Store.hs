@@ -7,12 +7,12 @@ where
 
 type Address = Int
 data Store = Memory
-  { memory :: [Int]
+  { memoryOffset :: Int
   , registerOffset :: Int
   , references :: [(String, Address)]
   }
   deriving (Show)
 
 emptyStore :: Store
-emptyStore = Memory { memory = [], registerOffset = 1, references = [] }
+emptyStore = Memory { memoryOffset = 1, registerOffset = 1, references = [] }
 

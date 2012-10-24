@@ -1,63 +1,35 @@
-module Language.Imperia.Grammar
-  ( Expression (..)
-  , BooleanExpression (..)
-  , BooleanOperator (..)
-  , RelationalOperator (..)
-  , ArithmeticExpression (..)
-  , ArithmeticOperator (..)
-  )
-where
+module Language.Imperia.Grammar (Expression (..)) where
 
 import Prelude hiding (True, False)
 
 data Expression =
     Nil
-  | Expression (Either ArithmeticExpression BooleanExpression)
   | Assignment String Expression
   | Block [String] Expression
   | Call String [Expression]
-  | IfElseExpression BooleanExpression Expression Expression
-  | IfExpression BooleanExpression Expression
-  | WhileExpression BooleanExpression Expression
+  | IfElseExpression Expression Expression Expression
+  | IfExpression Expression Expression
+  | ElseExpression Expression
+  | WhileExpression Expression Expression
   | Sequencing [Expression]
-  deriving (Show)
-
-data BooleanExpression =
-    BooleanOperation BooleanOperator BooleanExpression BooleanExpression
-  | RelationalOperation RelationalOperator ArithmeticExpression ArithmeticExpression
-  | LogicalNegation BooleanExpression
-  | True
-  | False
-  deriving (Show)
-
-data BooleanOperator =
-    And
-  | Or
-  deriving (Show)
-
-data RelationalOperator =
-    LessThan
-  | LessThanOrEqual
-  | GreaterThan
-  | GreaterThanOrEqual
-  | Equal
-  | NotEqual
-  deriving (Show)
-
-data ArithmeticExpression =
-    ArithmeticOperation ArithmeticOperator ArithmeticExpression ArithmeticExpression
-  | ArithmeticNegation ArithmeticExpression
   | Variable String
   | Constant Integer
+  | Addition Expression Expression
+  | Subtraction Expression Expression
+  | Multiplication Expression Expression
+  | Division Expression Expression
+  | Exponentiation Expression Expression
+  | ArithmeticNegation Expression
+  | True
+  | False
+  | And Expression Expression
+  | Or Expression Expression
+  | LessThan Expression Expression
+  | LessThanOrEqual Expression Expression
+  | GreaterThan Expression Expression
+  | GreaterThanOrEqual Expression Expression
+  | Equal Expression Expression
+  | NotEqual Expression Expression
+  | LogicalNegation Expression
   deriving (Show)
-
-data ArithmeticOperator =
-    Addition
-  | Subtraction
-  | Multiplication
-  | Division
-  | Exponentiation
-  deriving (Show)
-
-
 

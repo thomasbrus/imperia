@@ -6,33 +6,33 @@ import Language.Imperia.Grammar
 import Language.Imperia.Compiler.Store
 import qualified Language.Imperia.Compiler.Operation as Operation
 
-compile :: Store -> ArithmeticExpression -> (Store, [Assembly])
-compile store arithmeticExpression = compile' store arithmeticExpression
+compile :: Store -> Expression -> (Store, [Assembly])
+compile store expression = compile' store expression
 
-compile' :: Store -> ArithmeticExpression -> (Store, [Assembly])
-compile' store arithmeticExpression =
-  case arithmeticExpression of
+compile' :: Store -> Expression -> (Store, [Assembly])
+compile' store expression =
+  case expression of
     Constant int ->
       ( store,
         [ Store (Imm (fromIntegral int)) (registerOffset store) ]
       )
 
-    ArithmeticNegation expression ->
+    Negation expression ->
       compile' store $ ArithmeticOperation Subtraction (Constant 0) expression
 
-    ArithmeticOperation Addition expr1 expr2 ->
+    Addition expr1 expr2 ->
       perform store Add expr1 expr2
 
-    ArithmeticOperation Subtraction expr1 expr2 ->
+    Subtraction expr1 expr2 ->
       perform store Sub expr1 expr2
 
-    ArithmeticOperation Multiplication expr1 expr2 ->
+    Multiplication expr1 expr2 ->
       perform store Mul expr1 expr2
 
-    ArithmeticOperation Division expr1 expr2 ->
+    Division expr1 expr2 ->
       perform store Div expr1 expr2
 
-    ArithmeticOperation Exponentiation expr1 expr2 ->
+    Exponentiation expr1 expr2 ->
       error "Exponentiation is not yet implemented"
 
 perform :: Store -> OpCode -> ArithmeticExpression -> ArithmeticExpression -> (Store, [Assembly])

@@ -14,6 +14,8 @@ import Text.Parsec.IndentParsec.Combinator
 import Language.Imperia.Grammar
 import Language.Imperia.Lexer
 
+import Data.Maybe
+
 type Parser a = IndentParsecT String () Identity a
 
 parse :: String -> Expression
@@ -26,7 +28,7 @@ parser =  expressions
 
 expressions :: Parser Expression
 expressions = do
-  ls <- many $ foldedLinesOf expression -- parens expression) <|> 
+  ls <- many $ foldedLinesOf expression
   return $ if length ls == 1 then head ls else Sequencing ls
 
 expression :: Parser Expression
@@ -34,51 +36,54 @@ expression = choice
   [ try blockExpression
   , try callExpression
   , try assignExpression
-  , try $ fmap (Expression . Right) booleanExpression
-  , fmap (Expression . Left) arithmeticExpression
-  , try ifElseExpression
-  , ifExpression
-  , try unlessExpression
+  , ifElseExpression
   , unlessElseExpression
   , whileExpression
   , untilExpression
+  , simpleExpression
   , nilExpression
   ]
 
 ifElseExpression :: Parser Expression
 ifElseExpression = do
-  (IfExpression condition consequent) <- ifExpression
-  reserved "else"
-  alternative <- (try $ blockOf expressions) <|> expression
+  (condition, consequent) <- ifExpression
+  res <- optionMaybe elseExpression
+  alternative <- if isJust res then (do return $ fromJust res) else (do return $ Sequencing [])
   return $ IfElseExpression condition consequent alternative
 
-ifExpression :: Parser Expression
+ifExpression :: Parser (Expression, Expression)
 ifExpression = do
   reserved "if"
-  condition <- booleanExpression
+  condition <- simpleExpression
   optional $ reserved "then"
-  consequent <- (try $ blockOf expressions) <|> expression
-  return $ IfExpression condition consequent
+  consequent <- expression <|> blockOf expression
+  return $ (condition, consequent)
+
+elseExpression :: Parser Expression
+elseExpression = do
+  reserved "else"
+  alternative <- expression <|> blockOf expression
+  return $ alternative
 
 unlessElseExpression :: Parser Expression
 unlessElseExpression = do
-  (IfExpression condition consequent) <- unlessExpression
-  reserved "else"
-  alternative <- (try $ blockOf expressions) <|> expression
+  (condition, consequent) <- unlessExpression
+  res <- optionMaybe elseExpression
+  alternative <- if isJust res then (do return $ fromJust res) else (do return $ Sequencing [])
   return $ IfElseExpression condition consequent alternative
 
-unlessExpression :: Parser Expression
+unlessExpression :: Parser (Expression, Expression)
 unlessExpression = do
   reserved "unless"
-  condition <- booleanExpression
+  condition <- simpleExpression
   optional $ reserved "then"
-  consequent <- (try $ blockOf expressions) <|> expression
-  return $ IfExpression (LogicalNegation condition) consequent  
+  consequent <- expression <|> blockOf expression
+  return $ (LogicalNegation condition, consequent)
 
 whileExpression :: Parser Expression
 whileExpression = do
   reserved "while"
-  condition <- booleanExpression
+  condition <- simpleExpression
   optional $ reserved "do"
   consequent <- (try $ blockOf expressions) <|> expression
   return $ WhileExpression condition consequent
@@ -86,10 +91,10 @@ whileExpression = do
 untilExpression :: Parser Expression
 untilExpression = do
   reserved "until"
-  condition <- booleanExpression
+  condition <- simpleExpression
   optional $ reserved "do"
   consequent <- (try $ blockOf expressions) <|> expression
-  return $ WhileExpression (LogicalNegation condition) consequent
+  return $ WhileExpression (LogicalNegation condition) consequent  
 
 blockExpression :: Parser Expression
 blockExpression = do
@@ -116,56 +121,43 @@ nilExpression = do
   _ <- reserved "nil"
   return $ Nil
 
-arithmeticExpression :: Parser ArithmeticExpression
-arithmeticExpression = buildExpressionParser arithmeticOperators arithmeticTerm
-
-booleanExpression :: Parser BooleanExpression
-booleanExpression = buildExpressionParser booleanOperators booleanTerm
+simpleExpression :: Parser Expression
+simpleExpression = buildExpressionParser (arithmeticOperators ++ booleanOperators ++ relationalOperators) term
 
 arithmeticOperators =
-  [ [ Prefix (operator "-" >> return (ArithmeticNegation)) ]
-  , [ Infix (operator "^"  >> return (ArithmeticOperation Exponentiation)) AssocRight]
-  , [ Infix (operator "*"  >> return (ArithmeticOperation Multiplication)) AssocLeft
-    , Infix (operator "/"  >> return (ArithmeticOperation Division)) AssocLeft
+  [ [ Prefix (operator "-" >> return ArithmeticNegation) ]
+  , [ Infix (operator "^"  >> return Exponentiation) AssocRight]
+  , [ Infix (operator "*"  >> return Multiplication) AssocLeft
+    , Infix (operator "/"  >> return Division) AssocLeft
     ]
-  , [ Infix (operator "+"  >> return (ArithmeticOperation Addition)) AssocLeft
-    , Infix (operator "-"  >> return (ArithmeticOperation Subtraction)) AssocLeft
+  , [ Infix (operator "+"  >> return Addition) AssocLeft
+    , Infix (operator "-"  >> return Subtraction) AssocLeft
     ]
   ]
 
 booleanOperators =
-  [ [Prefix ((operator "not" <|> operator "!") >> return (LogicalNegation))]
-  , [Infix ((operator "and" <|> operator "&&")  >> return (BooleanOperation And)) AssocLeft]
-  , [Infix ((operator "or" <|> operator "||") >> return (BooleanOperation Or)) AssocLeft]
+  [ [Prefix ((operator "not" <|> operator "!") >> return LogicalNegation)]
+  , [Infix ((operator "and" <|> operator "&&")  >> return And) AssocLeft]
+  , [Infix ((operator "or" <|> operator "||") >> return Or) AssocLeft]
   ]
 
-arithmeticTerm :: Parser ArithmeticExpression
-arithmeticTerm =
-      parens arithmeticExpression
-  <|> fmap Variable identifier
-  <|> fmap Constant integer
+relationalOperators =
+  [ [ Infix (operator "<="  >> return LessThan) AssocLeft
+    , Infix (operator "<"  >> return LessThanOrEqual) AssocLeft
+    , Infix (operator ">="  >> return GreaterThan) AssocLeft
+    , Infix (operator ">"  >> return GreaterThanOrEqual) AssocLeft
+    , Infix (operator "!="  >> return NotEqual) AssocLeft
+    , Infix (operator "=="  >> return Equal) AssocLeft
+    ]
+  ]
 
-booleanTerm :: Parser BooleanExpression
-booleanTerm =
-      parens booleanExpression
-  <|> (reserved "true"  >> return True)
-  <|> (reserved "false" >> return False)
-  <|> relationalExpression
+term :: Parser Expression
+term = choice [ parens expression, arithmeticTerm, booleanTerm ]
 
-relationalExpression :: Parser BooleanExpression
-relationalExpression = do
-  a1 <- arithmeticExpression
-  operation <- relation
-  a2 <- arithmeticExpression
-  return $ RelationalOperation operation a1 a2
+arithmeticTerm :: Parser Expression
+arithmeticTerm = choice [ fmap Variable identifier, fmap Constant integer ]
 
-relation :: Parser RelationalOperator
-relation =
-      (reserved "<="  >> return LessThanOrEqual)
-  <|> (reserved "<"   >> return LessThan)
-  <|> (reserved ">="  >> return GreaterThanOrEqual)
-  <|> (reserved ">"   >> return GreaterThan)
-  <|> (reserved "!="  >> return NotEqual)
-  <|> (reserved "=="  >> return Equal)
+booleanTerm :: Parser Expression
+booleanTerm = choice [ (reserved "true") >> return True, (reserved "false") >> return False ]
 
 
