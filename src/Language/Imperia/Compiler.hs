@@ -26,7 +26,7 @@ compile' store (Sequencing expressions) =
 
 compile' store (Constant int) =
   ( store,
-    [ Store (Imm (fromIntegral int)) (registerOffset store) ]
+    [ Load (Imm (fromIntegral int)) (registerOffset store) ]
   )
 
 compile' store (ArithmeticNegation expression) = 
@@ -84,76 +84,58 @@ compile' store (NotEqual expr1 expr2) =
 compile' store (LogicalNegation expression) =
   Operation.perform compile' store Not expression Grammar.False  
 
---compile' store (IfExpression booleanExpression expression) =
---  compile' store (IfElseExpression booleanExpression expression (Sequencing []))
+compile' store (IfElseExpression test expr1 expr2) =
+  ( store
+  , -- Evaluate the condition
+    condition ++
+    [ -- Set the condition flag
+      Calc Eq (offset + 1) 0 0
+      -- Jump to alternative if false
+    , RCJump $ length consequent + 3
+    ] ++
 
---compile' store (IfElseExpression booleanCondition expr1 expr2) =
---  ( store
---  , -- Evaluate the condition
---    condition ++
+    -- Otherwise evaluate the consequent
+    consequent ++
+    [ -- And copy the outcome
+      Calc Add (offset + 2) 0 offset
+      -- Finally jump to the end and skip the alternative
+    , RJump $ length alternative + 2
+    ] ++
 
---    [ -- Now load it into the register
---      Load (Addr $ offset + 2) offset
---      -- And set the condition flag
---    , Calc Eq offset 0 0
---      -- Jump to alternative if false
---    , RCJump $ length consequent + 2
---    ] ++
+    -- Evaluate the alternative
+    alternative ++
+    [ -- Copy it's outcome
+      Calc Add (offset + 3) 0 offset
+    ]
+  )
+  where
+    offset = registerOffset store
+    condition = snd $ compile' (store { registerOffset = offset + 1 }) test
+    consequent = snd $ compile' (store { registerOffset = offset + 2 }) expr1
+    alternative = snd $ compile' (store { registerOffset = offset + 3 }) expr2
 
---    -- Otherwise evaluate the consequent
---    consequent ++
-    
---    [ -- Jump to the very end and store the outcome
---      RJump $ length alternative + 2
---    ] ++
+compile' store (WhileExpression test expression) =
+  ( store
+  , -- Evaluate the condition
+    condition ++
+    [ -- Set the condition flag
+      Calc Eq (offset + 1) 0 0
+      -- Skip to end if false
+    , RCJump $ length consequent + 3
+    ] ++
 
---    -- Evaluate the alternative and store the outcome
---    -- If the alternative is empty, then skip storing its outcome
---    (if null alternative then [ RJump 3 ] else alternative) ++
-
---    [ -- Store the outcome of the evaluated sub routine
---      Load (Addr $ offset + 2) offset
---    , Store (Addr offset) offset
---    ]
---  )
---  where
---    offset = registerOffset store
---    store' = store { registerOffset = offset + 2 }
---    condition = snd $ compile' store' booleanCondition
---    consequent = snd $ compile' store' expr1
---    alternative = snd $ compile' store' expr2
-
---compile' store (WhileExpression booleanExpression expression) =
---  ( store
---  , -- Evaluate the condition
---    condition ++
-
---    [ -- Now load it into the register
---      Load (Addr $ offset + 2) offset
---      -- And set the condition flag
---    , Calc Eq offset 0 0
---      -- Skip over the while body if false
---    , RCJump $ length consequent + 2
---    ] ++
-
---    -- Otherwise evaluate it
---    consequent ++
-
---    [ -- Evaluate the while block again
---      RJump $ - (length consequent) - 1
---    ] ++
-
---    [ -- Store the outcome of the evaluated sub routine
---      Load (Addr $ offset + 2) offset
---    , Store (Addr offset) offset
---    ]
-
---  )
---  where
---    offset = registerOffset store
---    store' = store { registerOffset = offset + 2 }
---    condition = snd $ compile' store' $ Expression $ Right booleanExpression
---    consequent = snd $ compile' store' expression
+    -- Otherwise evaluate the consequent
+    consequent ++
+    [ -- Copy the outcome (this might be the last iteration)
+      Calc Add (offset + 2) 0 offset
+      -- Return to the while condition
+    , RJump $ - (length consequent) - (length condition) - 3
+    ]
+  )
+  where
+    offset = registerOffset store
+    condition = snd $ compile' (store { registerOffset = offset + 1 }) test
+    consequent = snd $ compile' (store { registerOffset = offset + 2 }) expression
 
 
 --fetchFromMemory :: Store -> Address -> Int

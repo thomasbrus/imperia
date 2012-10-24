@@ -85,15 +85,17 @@ whileExpression = do
   reserved "while"
   condition <- simpleExpression
   optional $ reserved "do"
-  consequent <- (try $ blockOf expressions) <|> expression
+  consequent <- expression <|> blockOf expression
   return $ WhileExpression condition consequent
+
+-- TODO: For expression
 
 untilExpression :: Parser Expression
 untilExpression = do
   reserved "until"
   condition <- simpleExpression
   optional $ reserved "do"
-  consequent <- (try $ blockOf expressions) <|> expression
+  consequent <- expression <|> blockOf expression
   return $ WhileExpression (LogicalNegation condition) consequent  
 
 blockExpression :: Parser Expression
