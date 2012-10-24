@@ -69,6 +69,40 @@ compile' store (IfElseExpression booleanExpression expr1 expr2) =
     consequent = snd $ compile' store' expr1
     alternative = snd $ compile' store' expr2
 
+
+compile' store (WhileExpression booleanExpression expression) =
+  ( store
+  , -- Evaluate the condition
+    condition ++
+
+    [ -- Now load it into the register
+      Load (Addr $ offset + 2) offset
+      -- And set the condition flag
+    , Calc Eq offset 0 0
+      -- Skip over the while body if false
+    , RCJump $ length consequent + 2
+    ] ++
+
+    -- Otherwise evaluate it
+    consequent ++
+
+    [ -- Evaluate the while block again
+      RJump $ - (length consequent) - 1
+    ] ++
+
+    [ -- Store the outcome of the evaluated sub routine
+      Load (Addr $ offset + 2) offset
+    , Store (Addr offset) offset
+    ]
+
+  )
+  where
+    offset = registerOffset store
+    store' = store { registerOffset = offset + 2 }
+    condition = snd $ compile' store' $ Expression $ Right booleanExpression
+    consequent = snd $ compile' store' expression
+
+
 fetchFromMemory :: Store -> Address -> Int
 fetchFromMemory store address = (memory store) !! address
 
