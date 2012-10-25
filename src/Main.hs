@@ -1,3 +1,9 @@
+module Main
+  ( main
+  , executeFile
+  )
+where
+
 import System.Environment
 import Processor.Sprockell as Sprockell (Assembly (..), Value (..), OpCode (..))
 
@@ -7,11 +13,11 @@ import Language.Imperia.Grammar
 import Language.Imperia.Compiler
 import Language.Imperia.Compiler.Store
 
-main :: IO (String)
+main :: IO ()
 main = do
   [filename] <- getArgs
   result <- executeFile filename
-  return $ result
+  putStrLn result
 
 executeFile :: String -> IO (String)
 executeFile filename = do
