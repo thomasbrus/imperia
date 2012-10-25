@@ -9,26 +9,6 @@ import Language.Imperia.Grammar as Grammar
 import Language.Imperia.Compiler.Store
 import qualified Language.Imperia.Compiler.Operation as Operation
 
-example = unlines
-  [ "a = 2                    "
-  , "n = 4                    "
-  , "power = 1                "
-  , "while n > 0              "
-  , "  n = n - 1              "
-  , "  power = a * power      "
-  ]
-
-  --a = 3;
-  --n = 5;
-  --power = 1;
-  --while (n != 0) {
-  --  power = a * power;
-  --  n = n-1;
-  --};
-
-prog = compile $ parse example
-main = putStr . unlines . map show $ exec' $ snd $ prog
-
 compile :: Expression -> (Store, [Assembly])
 compile expression = (store, assembly ++ [ EndProg ])
   where (store, assembly) = compile' emptyStore expression
@@ -69,15 +49,6 @@ compile' store (Constant int) =
     -- Load the value directly into the register 
     [ Load (Imm (fromIntegral int)) (registerOffset store) ]
   )
-
---compile' store (Function name args expression) =
---  ( store'
---  , 
-
---  )
-
---  where
---    reference = (name, pointer store)
 
 compile' store (ArithmeticNegation expression) = 
   compile' store $ Subtraction (Constant 0) expression
