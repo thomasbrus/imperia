@@ -6,7 +6,6 @@ where
 
 import System.Environment
 import Processor.Sprockell as Sprockell (Assembly (..), Value (..), OpCode (..))
-
 import Processor.Exec (exec')
 import Language.Imperia.Parser
 import Language.Imperia.Grammar

@@ -1,30 +1,21 @@
 # Imperia
 
-A functional programming language that allows imperative like statements.
+A simple imperative programming language.
 
-Everything evaluates to a value:
+## How to install
 
-    length |list| = 1 + length |tail |list||
+    $ git clone https://github.com/thomasbrus/imperia.git
+    $ cd imperia
+    $ cabal install --prefix=$HOME --user
 
-    winner = if won then "me" # => "me"
-    congratulate |winners| = while length |winners| > 0 do
-      "Congrats " ++ winner
+Run with:
 
-    congratulate |[1, 2, 3]| # => ["Congrats 1", "Congrats 2", "..."]
+    $ ~/bin/imperia program.im
 
-# If statements
+## Examples
 
-  
+See [src/examples](https://github.com/thomasbrus/imperia/tree/master/examples).
 
+## Language overview
 
-# List decomposition
-    
-    [x, y] = [1, 2]
-
-    [x, xs..] = [1, 2, 3] # => x = 1, xs = [2, 3]
-
-    length |[x, xs..]| = if x = [] 0 else 1 + length xs
-
-    length |[1, 2, 3]|
-      # x -> 1
-      # xs -> [2, 3]
+...
