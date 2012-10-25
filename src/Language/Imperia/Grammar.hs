@@ -3,14 +3,13 @@ module Language.Imperia.Grammar (Expression (..)) where
 import Prelude hiding (True, False)
 
 data Expression =
-    Nil
-  | Assignment String Expression
-  | Block [String] Expression
+    Assignment String [String] Expression
   | Call String [Expression]
-  | IfElseExpression Expression Expression Expression
-  | IfExpression Expression Expression
-  | ElseExpression Expression
-  | WhileExpression Expression Expression
+  | List [Expression]
+  | ListAssignment [[String]] [Expression]
+  | Splat String
+  | IfThenElse Expression Expression Expression
+  | While Expression Expression
   | Sequencing [Expression]
   | Variable String
   | Constant Integer
@@ -20,8 +19,6 @@ data Expression =
   | Division Expression Expression
   | Exponentiation Expression Expression
   | ArithmeticNegation Expression
-  | True
-  | False
   | And Expression Expression
   | Or Expression Expression
   | LessThan Expression Expression
@@ -31,5 +28,7 @@ data Expression =
   | Equal Expression Expression
   | NotEqual Expression Expression
   | LogicalNegation Expression
+  | True
+  | False
   deriving (Show)
 

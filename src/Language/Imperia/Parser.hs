@@ -19,9 +19,10 @@ import Data.Maybe
 type Parser a = IndentParsecT String () Identity a
 
 parse :: String -> Expression
-parse input = case runIdentity $ runGIPT parser () "" input of
-                Left err -> error $ show err
-                Right res -> res
+parse input =
+  let resultOrError = runIdentity $ runGIPT parser () "" input
+  in either (\err -> error $ show err) (\res -> res) resultOrError 
+
 
 parser :: Parser Expression
 parser = expressions
@@ -33,85 +34,81 @@ expressions = do
 
 expression :: Parser Expression
 expression = choice
-  [ parens expression
-  , try assignExpression
-  , ifElseExpression
-  , whileExpression
-  , untilExpression
-  , simpleExpression
-  , nilExpression
+  [ try simpleExpression
+  , try assignment
+  , try call
+  , try list
+  , parens expression
+  , ifElseBlock
+  , whileBlock
+  , untilBlock
   ]
 
-ifElseExpression :: Parser Expression
-ifElseExpression = do
-  (condition, consequent) <- ifExpression <|> unlessExpression
-  alternative <- option (Sequencing []) elseExpression
-  return $ IfElseExpression condition consequent alternative
+inlineOrBlock :: Parser Expression
+inlineOrBlock = (try $ blockOf expressions) <|> expression
 
-ifExpression :: Parser (Expression, Expression)
-ifExpression = do
+ifElseBlock :: Parser Expression
+ifElseBlock = do
+  (condition, consequent) <- ifBlock <|> unlessBlock
+  alternative <- option (Sequencing []) elseBlock
+  return $ IfThenElse condition consequent alternative
+
+ifBlock :: Parser (Expression, Expression)
+ifBlock = do
   keyword <- reserved "if"
   condition <- expression
   optional $ reserved "then"
-  consequent <- expressions <|> expression
+  consequent <- inlineOrBlock
   return $ (condition, consequent)
 
-elseExpression :: Parser Expression
-elseExpression = do
+elseBlock :: Parser Expression
+elseBlock = do
   reserved "else"
-  alternative <- expressions <|> expression
+  alternative <- inlineOrBlock
   return $ alternative
 
-unlessExpression :: Parser (Expression, Expression)
-unlessExpression = do
+unlessBlock :: Parser (Expression, Expression)
+unlessBlock = do
   reserved "unless"
   condition <- expression
   optional $ reserved "then"
-  consequent <- expressions <|> expression
+  consequent <- inlineOrBlock
   return $ (LogicalNegation condition, consequent)
 
-whileExpression :: Parser Expression
-whileExpression = do
+whileBlock :: Parser Expression
+whileBlock = do
   reserved "while"
   condition <- expression
   optional $ reserved "do"
-  consequent <- expressions <|> expression
-  return $ WhileExpression condition consequent
+  consequent <- inlineOrBlock
+  return $ While condition consequent
 
--- TODO: For loops
-
-untilExpression :: Parser Expression
-untilExpression = do
+untilBlock :: Parser Expression
+untilBlock = do
   reserved "until"
   condition <- expression
   optional $ reserved "do"
-  consequent <- expressions <|> expression
-  return $ WhileExpression (LogicalNegation condition) consequent  
+  consequent <- inlineOrBlock
+  return $ While (LogicalNegation condition) consequent
 
---blockExpression :: Parser Expression
---blockExpression = do
---  args <- between pipe pipe (sepBy1 identifier whitespace)
---  body <- (try $ blockOf expressions) <|> expression
---  return $ Block args body
+assignment :: Parser Expression
+assignment = do
+  label <- identifier
+  args <- option [] $ parens (sepBy identifier comma) 
+  reserved "="
+  assignable <- inlineOrBlock
+  return $ Assignment label args assignable
 
---callExpression :: Parser Expression
---callExpression = do
---  callee <- identifier
---  operator "->"
---  args <- sepBy1 ((parens expression) <|> expression) whitespace
---  return $ Call callee args
+call :: Parser Expression
+call = do
+  callee <- identifier
+  args <- option [] $ parens (sepBy expression comma)
+  return $ Call callee args
 
-assignExpression :: Parser Expression
-assignExpression = do
-  variable <- identifier
-  operator "="
-  assignable <- expressions <|> expression
-  return $ Assignment variable assignable
-
-nilExpression :: Parser Expression
-nilExpression = do
-  reserved "nil"
-  return $ Nil
+list :: Parser Expression
+list = do
+  elements <- brackets (sepBy expression comma) 
+  return $ List elements
 
 simpleExpression :: Parser Expression
 simpleExpression = buildExpressionParser (arithmeticOperators ++ booleanOperators ++ relationalOperators) term
@@ -138,18 +135,24 @@ relationalOperators =
     , Infix (operator "<"  >> return LessThanOrEqual) AssocLeft
     , Infix (operator ">="  >> return GreaterThan) AssocLeft
     , Infix (operator ">"  >> return GreaterThanOrEqual) AssocLeft
-    , Infix (operator "!="  >> return NotEqual) AssocLeft
-    , Infix (operator "=="  >> return Equal) AssocLeft
+    , Infix ((operator "!=" <|> operator "isnt") >> return NotEqual) AssocLeft
+    , Infix ((operator "==" <|> operator "is") >> return Equal) AssocLeft
     ]
   ]
 
-term :: Parser Expression
-term = choice [ parens expression, arithmeticTerm, booleanTerm ]
-
 arithmeticTerm :: Parser Expression
-arithmeticTerm = choice [ fmap Variable identifier, fmap Constant integer ]
+arithmeticTerm = choice [ fmap Constant integer ]
 
 booleanTerm :: Parser Expression
 booleanTerm = choice [ (reserved "true") >> return True, (reserved "false") >> return False ]
 
+term :: Parser Expression
+term = choice
+  [ parens expression
+  , ifElseBlock
+  , whileBlock
+  , untilBlock
+  , arithmeticTerm
+  , booleanTerm
+  ]
 

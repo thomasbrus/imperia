@@ -9,6 +9,15 @@ import Language.Imperia.Grammar as Grammar
 import Language.Imperia.Compiler.Store
 import qualified Language.Imperia.Compiler.Operation as Operation
 
+example = unlines
+  [ "power |a, n| ->            "
+  , "  if n is 0 then           "
+  , "    1                      "
+  , "  else                     "
+  , "    a * power |a, (n - 1)| "
+  , "power |2, 3|               "
+  ]
+
 compile :: Expression -> (Store, [Assembly])
 compile expression = (store, assembly ++ [ EndProg ])
   where (store, assembly) = compile' emptyStore expression
@@ -20,7 +29,9 @@ compile' store (Sequencing expressions) =
     in (store', assembly ++ assembly')
   ) (store, []) expressions
 
-compile' store (Assignment label expression) =
+-- TODO Replace with function definition
+
+compile' store (Assignment label args expression) =
   ( store'
   , -- Evaluate the expression
     value ++ 
@@ -32,7 +43,9 @@ compile' store (Assignment label expression) =
     address = memoryOffset store
     reference = (label, address)
     -- Update the store with the new reference and memory offset
-    store' = store { references = (references store) ++ [reference], memoryOffset = address + 1 }
+    store' = shiftMemoryOffset (createReference store reference) 1
+
+-- TODO Replace with function call
 
 compile' store (Variable label) =
   ( store,
@@ -41,7 +54,7 @@ compile' store (Variable label) =
   )
   where
     -- Find the address in memory by it's label
-    address = locateByReference store label
+    address = findAddress store label
 
 compile' store (Constant int) =
   ( store,
@@ -109,7 +122,7 @@ compile' store (NotEqual expr1 expr2) =
 compile' store (LogicalNegation expression) =
   Operation.perform compile' store Not expression Grammar.False  
 
-compile' store (IfElseExpression test expr1 expr2) =
+compile' store (IfThenElse test expr1 expr2) =
   ( store
   , -- Evaluate the condition
     condition ++
@@ -134,11 +147,11 @@ compile' store (IfElseExpression test expr1 expr2) =
   )
   where
     offset = registerOffset store
-    (_, condition) = compile' (store { registerOffset = offset + 1 }) test
-    (_, consequent) = compile' (store { registerOffset = offset + 2 }) expr1
-    (_, alternative) = compile' (store { registerOffset = offset + 3 }) expr2
+    (_, condition) = compile' (shiftRegisterOffset store 1) test
+    (_, consequent) = compile' (shiftRegisterOffset store 2) expr1
+    (_, alternative) = compile' (shiftRegisterOffset store 3) expr2
 
-compile' store (WhileExpression test expression) =
+compile' store (While test expression) =
   ( store
   , -- Evaluate the condition
     condition ++
@@ -150,7 +163,7 @@ compile' store (WhileExpression test expression) =
 
     -- Otherwise evaluate the consequent
     consequent ++
-    -- Copy the outcome (this might be the last iteration)
+    -- Save the outcome each iteration (this might be the last one)
     [ Calc Add (offset + 2) 0 offset
     -- Return to the while condition
     , RJump $ - (length consequent) - (length condition) - 3
@@ -158,6 +171,6 @@ compile' store (WhileExpression test expression) =
   )
   where
     offset = registerOffset store
-    (_, condition) = compile' (store { registerOffset = offset + 1 }) test
-    (_, consequent) = compile' (store { registerOffset = offset + 2 }) expression
+    (_, condition) = compile' (shiftRegisterOffset store 1) test
+    (_, consequent) = compile' (shiftRegisterOffset store 2) expression
 

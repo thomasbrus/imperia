@@ -18,14 +18,13 @@ definition = LanguageDef
   , reservedNames   =
     [ "if" , "unless"
     , "then", "else"
-    , "while", "until"
-    , "do"
+    , "while", "until", "do"
     , "true", "false"
     , "not", "and", "or"
-    , "nil"
+    , "nil", "->"
     ]
   , reservedOpNames =
-    [ "+", "-", "*", "^", "/", "->", "<-"
+    [ "+", "-", "*", "^", "/"
     , "<", "<=", ">", ">=", "==", "!="
     , "and", "or", "not"
     , "&&", "||", "!"
