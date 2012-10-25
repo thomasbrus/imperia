@@ -1,0 +1,7 @@
+a = 2
+n = 4
+power = 1
+
+while n > 0
+  n = n - 1
+  power = a * power

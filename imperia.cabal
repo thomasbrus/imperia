@@ -1,0 +1,36 @@
+name:               sudoku-solver
+version:            0.0.1
+description:        A Sudoku Solver with GUI
+license:            MIT
+license-file:       LICENSE
+author:             Thomas Brus
+maintainer:         thomasbrus92@gmail.com
+build-type:         Simple
+cabal-version:      >=1.14
+
+extra-source-files: README.md
+
+Executable imperia
+  main-is:          Main.hs
+  build-depends:    base >= 3 && < 5
+  default-language: Haskell2010
+  hs-source-dirs:   src
+
+Library
+  build-depends:    base >= 3 && < 5
+  default-language: Haskell2010
+  hs-source-dirs:   src
+  ghc-options:      -Wall
+
+  exposed-modules:  Language.Imperia.Compiler
+                    Language.Imperia.Definition
+                    Language.Imperia.Grammar
+                    Language.Imperia.Lexer
+                    Language.Imperia.Parser
+
+  other-modules:    Processor.Exec
+                    Processor.Sprockell
+
+source-repository head
+  type:             git
+  location:         git://github.com/thomasbrus/imperia.git
