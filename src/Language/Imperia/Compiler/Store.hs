@@ -39,7 +39,7 @@ findAddress :: Store -> String -> Address
 findAddress store name =
   case lookupAddress store name of
     Just address -> address
-    Nothing -> error $ "Could not locate reference: '" ++ name ++ "'"
+    Nothing -> error $ "Could not find reference: '" ++ name ++ "'"
 
 chooseAddress :: Store -> String -> Address
 chooseAddress store name =
