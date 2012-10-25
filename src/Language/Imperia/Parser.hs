@@ -24,18 +24,18 @@ parse input = case runIdentity $ runGIPT parser () "" input of
                 Right res -> res
 
 parser :: Parser Expression
-parser =  expressions
+parser = expressions
 
 expressions :: Parser Expression
 expressions = do
-  ls <- many $ foldedLinesOf expression
-  return $ if length ls == 1 then head ls else Sequencing ls
+  list <- choice [ many1 expression, do { eof; return [] } ]
+  return $ if length list == 1 then head list else Sequencing list
 
 expression :: Parser Expression
 expression = choice
-  [ try assignExpression
+  [ parens expression
+  , try assignExpression
   , ifElseExpression
-  , unlessElseExpression
   , whileExpression
   , untilExpression
   , simpleExpression
@@ -44,46 +44,38 @@ expression = choice
 
 ifElseExpression :: Parser Expression
 ifElseExpression = do
-  (condition, consequent) <- ifExpression
-  res <- optionMaybe elseExpression
-  alternative <- if isJust res then (do return $ fromJust res) else (do return $ Sequencing [])
+  (condition, consequent) <- ifExpression <|> unlessExpression
+  alternative <- option (Sequencing []) elseExpression
   return $ IfElseExpression condition consequent alternative
 
 ifExpression :: Parser (Expression, Expression)
 ifExpression = do
-  reserved "if"
-  condition <- simpleExpression
+  keyword <- reserved "if"
+  condition <- expression
   optional $ reserved "then"
-  consequent <- expression <|> blockOf expression
+  consequent <- expressions <|> expression
   return $ (condition, consequent)
 
 elseExpression :: Parser Expression
 elseExpression = do
   reserved "else"
-  alternative <- expression <|> blockOf expression
+  alternative <- expressions <|> expression
   return $ alternative
-
-unlessElseExpression :: Parser Expression
-unlessElseExpression = do
-  (condition, consequent) <- unlessExpression
-  res <- optionMaybe elseExpression
-  alternative <- if isJust res then (do return $ fromJust res) else (do return $ Sequencing [])
-  return $ IfElseExpression condition consequent alternative
 
 unlessExpression :: Parser (Expression, Expression)
 unlessExpression = do
   reserved "unless"
-  condition <- simpleExpression
+  condition <- expression
   optional $ reserved "then"
-  consequent <- expression <|> blockOf expression
+  consequent <- expressions <|> expression
   return $ (LogicalNegation condition, consequent)
 
 whileExpression :: Parser Expression
 whileExpression = do
   reserved "while"
-  condition <- simpleExpression
+  condition <- expression
   optional $ reserved "do"
-  consequent <- expression <|> blockOf expression
+  consequent <- expressions <|> expression
   return $ WhileExpression condition consequent
 
 -- TODO: For loops
@@ -91,9 +83,9 @@ whileExpression = do
 untilExpression :: Parser Expression
 untilExpression = do
   reserved "until"
-  condition <- simpleExpression
+  condition <- expression
   optional $ reserved "do"
-  consequent <- expression <|> blockOf expression
+  consequent <- expressions <|> expression
   return $ WhileExpression (LogicalNegation condition) consequent  
 
 --blockExpression :: Parser Expression
@@ -113,12 +105,12 @@ assignExpression :: Parser Expression
 assignExpression = do
   variable <- identifier
   operator "="
-  assignable <- expression <|> blockOf expressions
+  assignable <- expressions <|> expression
   return $ Assignment variable assignable
 
 nilExpression :: Parser Expression
 nilExpression = do
-  _ <- reserved "nil"
+  reserved "nil"
   return $ Nil
 
 simpleExpression :: Parser Expression
