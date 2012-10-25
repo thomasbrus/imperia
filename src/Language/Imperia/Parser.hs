@@ -142,8 +142,8 @@ relationalOperators =
     , Infix (operator "<"  >> return LessThan) AssocLeft
     , Infix (operator ">="  >> return GreaterThanOrEqual) AssocLeft
     , Infix (operator ">"  >> return GreaterThan) AssocLeft
-    , Infix ((operator "!=" <|> operator "isnt") >> return NotEqual) AssocLeft
-    , Infix ((operator "==" <|> operator "is") >> return Equal) AssocLeft
+    , Infix ((operator "!=") >> return NotEqual) AssocLeft
+    , Infix ((operator "==") >> return Equal) AssocLeft
     ]
   ]
 

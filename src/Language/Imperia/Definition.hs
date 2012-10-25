@@ -26,7 +26,6 @@ definition = LanguageDef
   , reservedOpNames =
     [ "+", "-", "*", "^", "/"
     , "<", "<=", ">", ">=", "==", "!="
-    , "and", "or", "not"
     , "&&", "||", "!"
     ]
   }
