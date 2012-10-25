@@ -10,7 +10,8 @@ A simple imperative programming language.
 
 Run with:
 
-    $ ~/bin/imperia program.im
+    $ ~/bin/imperia examples/power.im 
+    16
 
 ## Examples
 
