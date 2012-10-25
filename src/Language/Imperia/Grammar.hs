@@ -3,11 +3,10 @@ module Language.Imperia.Grammar (Expression (..)) where
 import Prelude hiding (True, False)
 
 data Expression =
-    Assignment String [String] Expression
+    Assignment String Expression
+  | Function String [String] Expression
   | Call String [Expression]
   | List [Expression]
-  | ListAssignment [[String]] [Expression]
-  | Splat String
   | IfThenElse Expression Expression Expression
   | While Expression Expression
   | Sequencing [Expression]

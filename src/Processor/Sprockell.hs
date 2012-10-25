@@ -56,7 +56,7 @@ dmemsize    = 8   -- sizes of memory may be extended
 regbanksize = 8
 
 initstate = State  { dmem    = replicate dmemsize 0
-       , regbank = replicate regbanksize 0
+       , regbank = replicate regbanksize (0)
        , pc      = 0
        , cnd     = 0
        }

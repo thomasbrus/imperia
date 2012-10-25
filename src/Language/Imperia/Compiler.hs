@@ -10,13 +10,24 @@ import Language.Imperia.Compiler.Store
 import qualified Language.Imperia.Compiler.Operation as Operation
 
 example = unlines
-  [ "power |a, n| ->            "
-  , "  if n is 0 then           "
-  , "    1                      "
-  , "  else                     "
-  , "    a * power |a, (n - 1)| "
-  , "power |2, 3|               "
+  [ "a = 2                    "
+  , "n = 4                    "
+  , "power = 1                "
+  , "while n > 0              "
+  , "  n = n - 1              "
+  , "  power = a * power      "
   ]
+
+  --a = 3;
+  --n = 5;
+  --power = 1;
+  --while (n != 0) {
+  --  power = a * power;
+  --  n = n-1;
+  --};
+
+prog = compile $ parse example
+main = putStr . unlines . map show $ exec' $ snd $ prog
 
 compile :: Expression -> (Store, [Assembly])
 compile expression = (store, assembly ++ [ EndProg ])
@@ -29,9 +40,7 @@ compile' store (Sequencing expressions) =
     in (store', assembly ++ assembly')
   ) (store, []) expressions
 
--- TODO Replace with function definition
-
-compile' store (Assignment label args expression) =
+compile' store (Assignment name expression) =
   ( store'
   , -- Evaluate the expression
     value ++ 
@@ -40,27 +49,35 @@ compile' store (Assignment label args expression) =
   )
   where
     (_, value) = compile' store expression
-    address = memoryOffset store
-    reference = (label, address)
+    -- Choose a new or existing address
+    address = chooseAddress store name
+    reference = (name, address)
     -- Update the store with the new reference and memory offset
-    store' = shiftMemoryOffset (createReference store reference) 1
+    store' = shiftMemoryOffset (updateReference store reference) 1
 
--- TODO Replace with function call
-
-compile' store (Variable label) =
+compile' store (Variable name) =
   ( store,
     -- Copy the value into the register
     [ Load (Addr address) (registerOffset store) ]
   )
   where
-    -- Find the address in memory by it's label
-    address = findAddress store label
+    -- Find the address in memory by it's name
+    address = findAddress store name
 
 compile' store (Constant int) =
   ( store,
     -- Load the value directly into the register 
     [ Load (Imm (fromIntegral int)) (registerOffset store) ]
   )
+
+--compile' store (Function name args expression) =
+--  ( store'
+--  , 
+
+--  )
+
+--  where
+--    reference = (name, pointer store)
 
 compile' store (ArithmeticNegation expression) = 
   compile' store $ Subtraction (Constant 0) expression
@@ -129,7 +146,7 @@ compile' store (IfThenElse test expr1 expr2) =
     -- Set the condition flag
     [ Calc Eq (offset + 1) 0 0
     -- Jump to alternative if false
-    , RCJump $ length consequent + 3
+    , RCJump $ length consequent + 4
     ] ++
 
     -- Otherwise evaluate the consequent
@@ -151,26 +168,24 @@ compile' store (IfThenElse test expr1 expr2) =
     (_, consequent) = compile' (shiftRegisterOffset store 2) expr1
     (_, alternative) = compile' (shiftRegisterOffset store 3) expr2
 
-compile' store (While test expression) =
-  ( store
+compile' store (While predicate expression) =
+  ( store' { registerOffset = 1 }
   , -- Evaluate the condition
     condition ++
-    -- Set the condition flag
-    [ Calc Eq (offset + 1) 0 0
     -- Skip to end if false
-    , RCJump $ length consequent + 3
-    ] ++
+    [ RCJump $ length consequent + 3 ] ++
 
     -- Otherwise evaluate the consequent
     consequent ++
-    -- Save the outcome each iteration (this might be the last one)
-    [ Calc Add (offset + 2) 0 offset
-    -- Return to the while condition
-    , RJump $ - (length consequent) - (length condition) - 3
+    
+    [ -- Copy the outcome 
+      Calc Add (offset + 2) 0 offset
+      -- Return to the while condition
+    , RJump $ - (length consequent) - (length condition) - 2
     ]
   )
   where
     offset = registerOffset store
-    (_, condition) = compile' (shiftRegisterOffset store 1) test
-    (_, consequent) = compile' (shiftRegisterOffset store 2) expression
+    (_, condition) = compile' (shiftRegisterOffset store 1) (Equal predicate Grammar.False)
+    (store', consequent) = compile' (shiftRegisterOffset store 2) expression
 

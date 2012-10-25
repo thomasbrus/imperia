@@ -23,9 +23,9 @@ parse input =
   let resultOrError = runIdentity $ runGIPT parser () "" input
   in either (\err -> error $ show err) (\res -> res) resultOrError 
 
-
 parser :: Parser Expression
-parser = expressions
+-- Remove leading whitespace
+parser = whitespace >> expressions
 
 expressions :: Parser Expression
 expressions = do
@@ -36,8 +36,8 @@ expression :: Parser Expression
 expression = choice
   [ try simpleExpression
   , try assignment
+  , try function
   , try call
-  , try list
   , parens expression
   , ifElseBlock
   , whileBlock
@@ -55,7 +55,7 @@ ifElseBlock = do
 
 ifBlock :: Parser (Expression, Expression)
 ifBlock = do
-  keyword <- reserved "if"
+  reserved "if"
   condition <- expression
   optional $ reserved "then"
   consequent <- inlineOrBlock
@@ -93,16 +93,23 @@ untilBlock = do
 
 assignment :: Parser Expression
 assignment = do
-  label <- identifier
-  args <- option [] $ parens (sepBy identifier comma) 
+  name <- identifier
   reserved "="
   assignable <- inlineOrBlock
-  return $ Assignment label args assignable
+  return $ Assignment name assignable
+
+function :: Parser Expression
+function = do
+  name <- identifier
+  args <- parens (sepBy identifier comma) 
+  reserved "->"
+  assignable <- inlineOrBlock
+  return $ Function name args assignable
 
 call :: Parser Expression
 call = do
   callee <- identifier
-  args <- option [] $ parens (sepBy expression comma)
+  args <- parens (sepBy expression comma)
   return $ Call callee args
 
 list :: Parser Expression
@@ -131,24 +138,27 @@ booleanOperators =
   ]
 
 relationalOperators =
-  [ [ Infix (operator "<="  >> return LessThan) AssocLeft
-    , Infix (operator "<"  >> return LessThanOrEqual) AssocLeft
-    , Infix (operator ">="  >> return GreaterThan) AssocLeft
-    , Infix (operator ">"  >> return GreaterThanOrEqual) AssocLeft
+  [ [ Infix (operator "<="  >> return LessThanOrEqual) AssocLeft
+    , Infix (operator "<"  >> return LessThan) AssocLeft
+    , Infix (operator ">="  >> return GreaterThanOrEqual) AssocLeft
+    , Infix (operator ">"  >> return GreaterThan) AssocLeft
     , Infix ((operator "!=" <|> operator "isnt") >> return NotEqual) AssocLeft
     , Infix ((operator "==" <|> operator "is") >> return Equal) AssocLeft
     ]
   ]
 
 arithmeticTerm :: Parser Expression
-arithmeticTerm = choice [ fmap Constant integer ]
+arithmeticTerm = choice [ fmap Variable identifier, fmap Constant integer ]
 
 booleanTerm :: Parser Expression
 booleanTerm = choice [ (reserved "true") >> return True, (reserved "false") >> return False ]
 
 term :: Parser Expression
 term = choice
-  [ parens expression
+  [ try assignment
+  , try function
+  , try call
+  , parens expression
   , ifElseBlock
   , whileBlock
   , untilBlock

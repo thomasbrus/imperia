@@ -5,12 +5,16 @@ module Language.Imperia.Compiler.Store
   , shiftRegisterOffset
   , shiftMemoryOffset
   , findAddress
+  , chooseAddress
   , createReference
+  , updateReference
+  , destroyReference
+  , createUniqueReference
   )
 where
 
-import Data.List (find)
-import Data.Maybe (isJust)
+import Data.List
+import Data.Maybe
 
 type Address = Int
 type Reference = (String, Address)
@@ -32,22 +36,36 @@ shiftMemoryOffset :: Store -> Int -> Store
 shiftMemoryOffset store amount = store { memoryOffset = (memoryOffset store) + amount }
 
 findAddress :: Store -> String -> Address
-findAddress store label =
-  case lookupAddress store label of
-    Just reference -> reference
-    Nothing -> error $ "Could not locate reference: '" ++ label ++ "'"
+findAddress store name =
+  case lookupAddress store name of
+    Just address -> address
+    Nothing -> error $ "Could not locate reference: '" ++ name ++ "'"
+
+chooseAddress :: Store -> String -> Address
+chooseAddress store name =
+  case lookupAddress store name of
+    Just address -> address
+    Nothing -> memoryOffset store
 
 createReference :: Store -> Reference -> Store
-createReference store reference = store { references = (references store) ++ [reference] }
+createReference store reference = store { references = [reference] ++ (references store) }
+
+destroyReference :: Store -> Reference -> Store
+destroyReference store reference =
+  let isMatch (name, _) (name', _) = name == name'
+  in store { references = deleteBy isMatch reference (references store) }
+
+updateReference :: Store -> Reference -> Store
+updateReference store reference = createReference (destroyReference store reference) reference
 
 createUniqueReference :: Store -> Reference -> Store
-createUniqueReference store reference@(label, address)
-  | isJust $ lookupAddress store label
-  = error $ "Could not create reference. '" ++ label ++ "' has already been assigned."
+createUniqueReference store reference@(name, address)
+  | isJust $ lookupAddress store name
+  = error $ "Could not create reference. '" ++ name ++ "' has already been assigned."
   | otherwise
   = createReference store reference
 
 lookupAddress :: Store -> String -> Maybe Address
-lookupAddress store label = lookup label (references store)
+lookupAddress store name = lookup name (references store)
 
 

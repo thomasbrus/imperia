@@ -6,8 +6,8 @@ import Text.Parsec
 import Text.Parsec.Token (GenLanguageDef(..))
 
 definition = LanguageDef
-  { commentStart    = "###"
-  , commentEnd      = "###"
+  { commentStart    = ""
+  , commentEnd      = ""
   , commentLine     = "#"
   , identStart      = letter
   , identLetter     = alphaNum
