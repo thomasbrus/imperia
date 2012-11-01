@@ -8,14 +8,11 @@ A simple imperative programming language.
     $ cd imperia
     $ cabal install --prefix=$HOME --user
 
-Run with:
-
+## Examples
     $ ~/bin/imperia examples/power.im 
     16
 
-## Examples
-
-See [src/examples](https://github.com/thomasbrus/imperia/tree/master/examples).
+See [src/examples](https://github.com/thomasbrus/imperia/tree/master/examples) for more.
 
 ## Language overview
 
